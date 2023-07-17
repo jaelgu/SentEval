@@ -22,7 +22,7 @@ from scipy.stats import pearsonr
 
 class RelatednessPytorch(object):
     # Can be used for SICK-Relatedness, and STS14
-    def __init__(self, train, valid, test, devscores, config):
+    def __init__(self, train, valid, test, devscores, config, device='cpu'):
         # fix seed
         np.random.seed(config['seed'])
         torch.manual_seed(config['seed'])
@@ -42,13 +42,15 @@ class RelatednessPytorch(object):
         self.maxepoch = 1000
         self.early_stop = True
 
+        self.device = device
+
         self.model = nn.Sequential(
             nn.Linear(self.inputdim, self.nclasses),
             nn.Softmax(dim=-1),
         )
         self.loss_fn = nn.MSELoss()
 
-        if torch.cuda.is_available():
+        if device != 'cpu':
             self.model = self.model.cuda()
             self.loss_fn = self.loss_fn.cuda()
 
@@ -57,13 +59,21 @@ class RelatednessPytorch(object):
                                     weight_decay=self.l2reg)
 
     def prepare_data(self, trainX, trainy, devX, devy, testX, testy):
-        # Transform probs to log-probs for KL-divergence
-        trainX = torch.from_numpy(trainX).float().cuda()
-        trainy = torch.from_numpy(trainy).float().cuda()
-        devX = torch.from_numpy(devX).float().cuda()
-        devy = torch.from_numpy(devy).float().cuda()
-        testX = torch.from_numpy(testX).float().cuda()
-        testY = torch.from_numpy(testy).float().cuda()
+        if self.device != 'cpu':
+            # Transform probs to log-probs for KL-divergence
+            trainX = torch.from_numpy(trainX).float().cuda()
+            trainy = torch.from_numpy(trainy).float().cuda()
+            devX = torch.from_numpy(devX).float().cuda()
+            devy = torch.from_numpy(devy).float().cuda()
+            testX = torch.from_numpy(testX).float().cuda()
+            testy = torch.from_numpy(testy).float().cuda()
+        else:
+            trainX = torch.from_numpy(trainX).float()
+            trainy = torch.from_numpy(trainy).float()
+            devX = torch.from_numpy(devX).float()
+            devy = torch.from_numpy(devy).float()
+            testX = torch.from_numpy(testX).float()
+            testy = torch.from_numpy(testy).float()
 
         return trainX, trainy, devX, devy, testX, testy
 
@@ -107,7 +117,10 @@ class RelatednessPytorch(object):
             all_costs = []
             for i in range(0, len(X), self.batch_size):
                 # forward
-                idx = torch.from_numpy(permutation[i:i + self.batch_size]).long().cuda()
+                if self.device != 'cpu':
+                    idx = torch.from_numpy(permutation[i:i + self.batch_size]).long().cuda()
+                else:
+                    idx = torch.from_numpy(permutation[i:i + self.batch_size]).long()
                 Xbatch = X[idx]
                 ybatch = y[idx]
                 output = self.model(Xbatch)
