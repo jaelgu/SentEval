@@ -20,7 +20,6 @@ import logging
 from scipy.stats import spearmanr, pearsonr
 
 from senteval.utils import cosine
-from senteval.sick import SICKRelatednessEval
 
 
 class STSEval(object):
@@ -149,23 +148,99 @@ class STS16Eval(STSEval):
         self.loadFile(taskpath)
 
 
-class STSBenchmarkEval(SICKRelatednessEval):
+class STSBenchmarkEval(STSEval):
     def __init__(self, task_path, seed=1111):
-        logging.debug('\n\n***** Transfer task : STSBenchmark*****\n\n')
+        task_path = os.path.join(task_path)
+    
+        logging.debug(f'\n\n***** Transfer task : STSBenchmark-*****\n\n')
         self.seed = seed
-        train = self.loadFile(os.path.join(task_path, 'sts-train.csv'))
-        dev = self.loadFile(os.path.join(task_path, 'sts-dev.csv'))
-        test = self.loadFile(os.path.join(task_path, 'sts-test.csv'))
-        self.sick_data = {'train': train, 'dev': dev, 'test': test}
+        self.datasets = ['sts-dev.csv', 'sts-test.csv', 'sts-train.csv']
+        self.loadFile(task_path)
 
     def loadFile(self, fpath):
-        sick_data = {'X_A': [], 'X_B': [], 'y': []}
-        with io.open(fpath, 'r', encoding='utf-8') as f:
-            for line in f:
-                text = line.strip().split('\t')
-                sick_data['X_A'].append(text[5].split())
-                sick_data['X_B'].append(text[6].split())
-                sick_data['y'].append(text[4])
+        self.data = {}
+        self.samples = []
 
-        sick_data['y'] = [float(s) for s in sick_data['y']]
-        return sick_data
+        for dataset in self.datasets:
+            new_fpath = os.path.join(fpath, dataset)
+            sent1 = []
+            sent2 = []
+            gs_scores = []
+            with io.open(new_fpath, encoding='utf8') as f:
+                for line in f:
+                    text = line.strip().split('\t')
+                    if set(['id', 'label']).issubset(set(text)):
+                        continue
+                    sent1.append(text[5].split())
+                    sent2.append(text[6].split())
+                    gs_scores.append(float(text[4]))
+
+            self.data[dataset] = (sent1, sent2, gs_scores)
+            self.samples += sent1 + sent2
+    
+class STSBenchmarkCNEval(STSEval):
+    def __init__(self, task_path, seed=1111):
+        task_path = os.path.join(task_path)
+    
+        logging.debug(f'\n\n***** Transfer task : STSBenchmark-CN-*****\n\n')
+        self.seed = seed
+        self.datasets = ['STS-B.test.data', 'STS-B.valid.data', 'STS-B.train.data']
+        self.loadFile(task_path)
+
+    def loadFile(self, fpath):
+        self.data = {}
+        self.samples = []
+
+        for dataset in self.datasets:
+            new_fpath = os.path.join(fpath, dataset)
+            sent1 = []
+            sent2 = []
+            gs_scores = []
+            with io.open(new_fpath, encoding='utf8') as f:
+                for line in f:
+                    text = line.strip().split('\t')
+                    if set(['id', 'label']).issubset(set(text)):
+                        continue
+                    sent1.append(text[0].split())
+                    sent2.append(text[1].split())
+                    gs_scores.append(float(text[2]))
+
+            self.data[dataset] = (sent1, sent2, gs_scores)
+            self.samples += sent1 + sent2
+    
+class STSPAWSXEval(STSEval):
+    def __init__(self, task_path, seed=1111, lang='en'):
+        task_path = os.path.join(task_path, lang)
+    
+        logging.debug(f'\n\n***** Transfer task : STS-PAWSX-{lang}*****\n\n')
+        self.seed = seed
+        self.datasets = ['dev_2k.tsv', 'test_2k.tsv']
+        if lang == 'en':
+            self.datasets.append('train.tsv')
+        else:
+            self.datasets.append('translated_train.tsv')
+        self.loadFile(task_path)
+
+    def loadFile(self, fpath):
+        self.data = {}
+        self.samples = []
+
+        for dataset in self.datasets:
+            new_fpath = os.path.join(fpath, dataset)
+            sent1 = []
+            sent2 = []
+            gs_scores = []
+            with io.open(new_fpath, encoding='utf8') as f:
+                for line in f:
+                    text = line.strip().split('\t')
+                    if set(['id', 'label']).issubset(set(text)):
+                        continue
+                    sent1.append(text[1].split())
+                    sent2.append(text[2].split())
+                    gs_scores.append(float(text[3]))
+
+            self.data[dataset] = (sent1, sent2, gs_scores)
+            self.samples += sent1 + sent2
+
+        
+

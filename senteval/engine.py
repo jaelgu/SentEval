@@ -18,7 +18,11 @@ from senteval.snli import SNLIEval
 from senteval.trec import TRECEval
 from senteval.sick import SICKRelatednessEval, SICKEntailmentEval
 from senteval.mrpc import MRPCEval
-from senteval.sts import STS12Eval, STS13Eval, STS14Eval, STS15Eval, STS16Eval, STSBenchmarkEval
+from senteval.sts import (
+     STS12Eval, STS13Eval, STS14Eval, STS15Eval, STS16Eval,
+     STSBenchmarkEval, STSBenchmarkCNEval,
+     STSPAWSXEval
+     )
 from senteval.sst import SSTEval
 from senteval.rank import ImageCaptionRetrievalEval
 from senteval.probing import *
@@ -60,7 +64,7 @@ class SE(object):
             return self.results
 
         tpath = self.params.task_path
-        assert name in self.list_tasks, str(name) + ' not in ' + str(self.list_tasks)
+        # assert name in self.list_tasks, str(name) + ' not in ' + str(self.list_tasks)
 
         # Original SentEval tasks
         if name == 'CR':
@@ -82,9 +86,13 @@ class SE(object):
         elif name == 'SICKRelatedness':
             self.evaluation = SICKRelatednessEval(tpath + '/downstream/SICK', seed=self.params.seed)
         elif name == 'STSBenchmark':
-            self.evaluation = STSBenchmarkEval(tpath + '/downstream/STS/STSBenchmark', seed=self.params.seed)
+            self.evaluation = STSBenchmarkEval(tpath + '/downstream/STS/STSBenchmark/en', seed=self.params.seed)
         elif name == 'STSBenchmark-CN':
-            self.evaluation = STSBenchmarkEval(tpath + '/downstream/STS/STSBenchmark-CN', seed=self.params.seed)
+            self.evaluation = STSBenchmarkCNEval(tpath + '/downstream/STS/STSBenchmark/zh', seed=self.params.seed)
+        elif name == 'STS-PAWSX':
+            self.evaluation = STSPAWSXEval(tpath + '/downstream/PAWSX', seed=self.params.seed)
+        elif name == 'STS-PAWSX-CN':
+            self.evaluation = STSPAWSXEval(tpath + '/downstream/PAWSX', seed=self.params.seed, lang='zh')
         elif name == 'SICKEntailment':
             self.evaluation = SICKEntailmentEval(tpath + '/downstream/SICK', seed=self.params.seed)
         elif name == 'SNLI':
