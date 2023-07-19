@@ -87,13 +87,15 @@ if __name__ == "__main__":
     p = []
     s = []
     for t in transfer_tasks:
-        count = 0
-        for k, v in results[t].items():
-            if 'nsamples' in v:
-                count += v['nsamples']
-        res = results[t]['all']
-        _pearson = res['pearson']['mean']
-        _spearman = res['spearman']['mean']
+        test_keys = []
+        for k in results[t].keys():
+            if 'test' in k:
+                test_keys.append(k)
+        assert len(test_keys) == 1, f'More than 1 test sets: {test_keys}'
+        res = results[t][test_keys[0]]
+        count = res['nsamples']
+        _pearson = res['pearson'].correlation
+        _spearman = res['spearman'].correlation
         print('\n{} with size {}: pearson-{:.3f}, spearman-{:.3f}'.format(t, count, _pearson, _spearman))
         p.append(_pearson)
         s.append(_spearman)

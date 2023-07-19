@@ -60,7 +60,13 @@ class SE(object):
     def eval(self, name):
         # evaluate on evaluation [name], either takes string or list of strings
         if (isinstance(name, list)):
-            self.results = {x: self.eval(x) for x in name}
+            self.reults = {}
+            for x in name:
+                try:
+                    res = self.eval(x)
+                    self.results[x] = res
+                except Exception as e:
+                    print(f'Failed for task {x}:\n{e}')
             return self.results
 
         tpath = self.params.task_path
