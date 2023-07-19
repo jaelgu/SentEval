@@ -87,17 +87,18 @@ if __name__ == "__main__":
     p = []
     s = []
     for t in transfer_tasks:
-        test_keys = []
-        for k in results[t].keys():
-            if 'test' in k:
-                test_keys.append(k)
-        assert len(test_keys) == 1, f'More than 1 test sets: {test_keys}'
-        res = results[t][test_keys[0]]
-        count = res['nsamples']
-        _pearson = res['pearson'].correlation
-        _spearman = res['spearman'].correlation
-        print('\n{} with size {}: pearson-{:.3f}, spearman-{:.3f}'.format(t, count, _pearson, _spearman))
-        p.append(_pearson)
-        s.append(_spearman)
+        try:
+            count = 0
+            res = results[t]['all']
+            for k, v in results[t].items():
+                if 'nsamples' in v:
+                    count += v['nsamples']
+            task_pearson = res['pearson']['mean']
+            task_spearman = res['spearman']['mean']
+            print('\n{} with size {}: pearson-{:.3f}, spearman-{:.3f}'.format(t, count, task_pearson, task_spearman))
+            p.append(task_pearson)
+            s.append(task_spearman)
+        except Exception as e:
+            print(f'Failed to parse results for task {t}:\n{e}')
     print('\nmean pearson:', mean(p))
     print('mean spearman:', mean(s))
