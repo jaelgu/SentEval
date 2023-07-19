@@ -151,11 +151,12 @@ class STS16Eval(STSEval):
 
 class STSBenchmarkEval(SICKRelatednessEval):
     def __init__(self, task_path, seed=1111):
-        logging.debug('\n\n***** Transfer task : STSBenchmark*****\n\n')
+        logging.debug('\n\n***** Transfer task : STSBenchmark-*****\n\n')
         self.seed = seed
         train = self.loadFile(os.path.join(task_path, 'sts-train.csv'))
         dev = self.loadFile(os.path.join(task_path, 'sts-dev.csv'))
         test = self.loadFile(os.path.join(task_path, 'sts-test.csv'))
+        
         self.sick_data = {'train': train, 'dev': dev, 'test': test}
 
     def loadFile(self, fpath):
@@ -166,6 +167,56 @@ class STSBenchmarkEval(SICKRelatednessEval):
                 sick_data['X_A'].append(text[5].split())
                 sick_data['X_B'].append(text[6].split())
                 sick_data['y'].append(text[4])
+
+        sick_data['y'] = [float(s) for s in sick_data['y']]
+        return sick_data
+    
+class STSBenchmarkCNEval(SICKRelatednessEval):
+    def __init__(self, task_path, seed=1111):
+        logging.debug('\n\n***** Transfer task : STSBenchmark-CN*****\n\n')
+        self.seed = seed
+        train = self.loadFile(os.path.join(task_path, 'STS-B.train.data'))
+        dev = self.loadFile(os.path.join(task_path, 'STS-B.valid.data'))
+        test = self.loadFile(os.path.join(task_path, 'STS-B.test.data'))
+        
+        self.sick_data = {'train': train, 'dev': dev, 'test': test}
+
+    def loadFile(self, fpath):
+        sick_data = {'X_A': [], 'X_B': [], 'y': []}
+        with io.open(fpath, 'r', encoding='utf-8') as f:
+            for line in f:
+                text = line.strip().split('\t')
+                sick_data['X_A'].append(text[0].split())
+                sick_data['X_B'].append(text[1].split())
+                sick_data['y'].append(text[2])
+
+        sick_data['y'] = [float(s) for s in sick_data['y']]
+        return sick_data
+    
+class STSPAWSXEval(SICKRelatednessEval):
+    def __init__(self, task_path, seed=1111, lang='en'):
+        logging.debug(f'\n\n***** Transfer task : STSPAWSX-{lang}-*****\n\n')
+        self.seed = seed
+        task_path = os.path.join(task_path, lang)
+        if lang == 'en':
+            train = self.loadFile(os.path.join(task_path, 'train.tsv'))
+        else:
+            train = self.loadFile(os.path.join(task_path, 'translated_train.tsv'))
+        dev = self.loadFile(os.path.join(task_path, 'dev_2k.tsv'))
+        test = self.loadFile(os.path.join(task_path, 'test_2k.tsv'))
+        
+        self.sick_data = {'train': train, 'dev': dev, 'test': test}
+
+    def loadFile(self, fpath):
+        sick_data = {'X_A': [], 'X_B': [], 'y': []}
+        with io.open(fpath, 'r', encoding='utf-8') as f:
+            for line in f:
+                text = line.strip().split('\t')
+                if set(['id', 'label']).issubset(set(text)):
+                    continue
+                sick_data['X_A'].append(text[1].split())
+                sick_data['X_B'].append(text[2].split())
+                sick_data['y'].append(text[3])
 
         sick_data['y'] = [float(s) for s in sick_data['y']]
         return sick_data
